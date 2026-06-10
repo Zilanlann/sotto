@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="color-scheme" content="dark light" />
+    <title>Sotto</title>
+    <script>
+      // Apply saved shell preferences before paint to avoid theme/language flash.
+      (function () {
+        try {
+          var saved = localStorage.getItem("sotto:theme");
+          var savedLocale = localStorage.getItem("sotto:locale");
+          document.documentElement.dataset.theme = saved === "light" ? "light" : "dark";
+          document.documentElement.lang = savedLocale === "en" ? "en" : "zh-CN";
+        } catch (e) {
+          document.documentElement.dataset.theme = "dark";
+          document.documentElement.lang = "zh-CN";
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
