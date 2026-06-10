@@ -86,14 +86,28 @@ npm run deploy
 ## Project Structure
 
 ```
-├── index.html          # app shell; applies saved theme/locale before paint
+├── index.html              # app shell; applies saved theme/locale before paint
 ├── src/
-│   ├── App.tsx         # UI, client-side crypto, API client, i18n copy
-│   ├── main.tsx        # React entry point
-│   ├── worker.ts       # Cloudflare Worker: API routes, KV storage, security headers
-│   └── styles.css      # Tailwind + HeroUI styles
-├── wrangler.jsonc      # Worker config (name, KV binding, static assets)
-└── vite.config.ts      # Vite build config
+│   ├── App.tsx             # root component: route switch + layout
+│   ├── main.tsx            # React entry point
+│   ├── types.ts            # StoredPaste contract + size/TTL limits shared with the Worker
+│   ├── i18n.ts             # zh/en UI copy
+│   ├── hooks.ts            # routing, theme, and locale hooks
+│   ├── lib/
+│   │   ├── crypto.ts       # AES-GCM encrypt/decrypt, PBKDF2, base64url, URL fragment
+│   │   ├── api.ts          # Worker API client with dev-only localStorage fallback
+│   │   └── format.ts       # byte/expiry/date formatting, sanitized Markdown rendering
+│   ├── components/
+│   │   ├── NavBar.tsx      # header with theme/language toggles
+│   │   ├── SiteFooter.tsx  # footer
+│   │   ├── CreatePaste.tsx # create flow, share card, privacy card
+│   │   ├── ViewPaste.tsx   # unlock/decrypt flow
+│   │   ├── TerminalState.tsx # expired/destroyed/missing/bad-link/error screens
+│   │   └── shared.tsx      # small shared components + clipboard helper
+│   ├── worker.ts           # Cloudflare Worker: API routes, KV storage, security headers
+│   └── styles.css          # Tailwind + HeroUI styles
+├── wrangler.jsonc          # Worker config (name, KV binding, static assets)
+└── vite.config.ts          # Vite build config
 ```
 
 ## Operational Checklist

@@ -1,28 +1,14 @@
 /// <reference types="@cloudflare/workers-types" />
 
-type StoredPaste = {
-  id: string;
-  ciphertext: string;
-  iv: string;
-  salt?: string;
-  createdAt: number;
-  expiresAt: number;
-  burnAfterReading: boolean;
-  markdown: boolean;
-  passwordProtected: boolean;
-  destroyedAt?: number;
-  readAt?: number;
-  bytes: number;
-};
+import { MAX_BYTES, MAX_EXPIRY_MINUTES, type StoredPaste } from "./types";
 
 type Env = {
   ASSETS: Fetcher;
   PASTES: KVNamespace;
 };
 
-const MAX_BYTES = 256 * 1024;
 const MAX_RECORD_BYTES = 512 * 1024;
-const MAX_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const MAX_TTL_MS = MAX_EXPIRY_MINUTES * 60 * 1000;
 const ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
 const JSON_CONTENT_TYPE_PATTERN = /^application\/(?:[\w.+-]+\+)?json(?:;|$)/i;
 const encoder = new TextEncoder();
@@ -230,6 +216,10 @@ async function destroyPaste(id: string, env: Env) {
   const paste = await readPaste(env, id);
   if (!paste) {
     return jsonResponse({ error: "not-found" }, { status: 404 });
+  }
+
+  if (!paste.burnAfterReading) {
+    return jsonResponse({ error: "destroy-not-allowed" }, { status: 403 });
   }
 
   const destroyedAt = Date.now();
