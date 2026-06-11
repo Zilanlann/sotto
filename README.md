@@ -2,6 +2,8 @@
 
 > Share secrets *sotto voce* — end-to-end encrypted, self-expiring paste sharing.
 
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Zilanlann/sotto)
+
 Sotto is a zero-knowledge pastebin built with React, HeroUI, Vite, and Cloudflare Workers. The browser encrypts paste content before upload; the server only ever sees ciphertext. Decryption keys live in the URL hash fragment, which browsers never send to the server — so even the operator of a Sotto deployment cannot read your pastes.
 
 The name comes from the Italian *sotto voce*: spoken softly, meant only for the intended listener.
@@ -50,6 +52,12 @@ npm run deploy    # build, then deploy to Cloudflare
 ```
 
 ## Cloudflare Setup
+
+### One-click deploy
+
+Click the **Deploy to Cloudflare** button above. Cloudflare clones this repository into your own GitHub/GitLab account, provisions the `PASTES` KV namespace automatically, rewrites the namespace id in `wrangler.jsonc`, and sets up CI so pushes to your copy redeploy the Worker.
+
+### Manual deploy
 
 Create the KV namespace in the Cloudflare account that will deploy the Worker:
 
@@ -112,7 +120,7 @@ npm run deploy
 
 ## Operational Checklist
 
-- Replace the placeholder KV namespace id in `wrangler.jsonc` before deployment.
+- For manual deploys, replace the placeholder KV namespace id in `wrangler.jsonc` first (one-click deploy handles this automatically).
 - Enable Cloudflare dashboard rate limiting for `POST /api/pastes` and `POST /api/pastes/*/destroy`.
 - Review Worker observability after deployment for 4xx and 5xx spikes.
 - Use a dedicated custom domain and keep Cloudflare TLS mode on Full or stricter.
