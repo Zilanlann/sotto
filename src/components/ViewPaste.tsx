@@ -11,15 +11,14 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
-  toast,
 } from "@heroui/react";
 import { Clock3, Copy as CopyIcon, Eye, FileText, Flame, Lock, RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { navigate } from "../hooks";
 import type { Copy, Locale } from "../i18n";
-import { destroyStoredPaste, readStoredPaste } from "../lib/api";
-import { decryptText, parseFragment } from "../lib/crypto";
+import { ApiError, claimStoredPaste, readStoredPaste } from "../lib/api";
+import { decryptWithKey, deriveViewKeys, parseFragment } from "../lib/crypto";
 import { formatBytes, formatExpiry, renderMarkdown } from "../lib/format";
 import type { StoredPaste } from "../types";
 import { copyText, StatusChip } from "./shared";
@@ -104,19 +103,37 @@ export function ViewPaste({ copy, locale, pasteId }: { copy: Copy; locale: Local
 
     try {
       await new Promise((resolve) => window.setTimeout(resolve, 260));
-      const decrypted = await decryptText(paste, password);
-      setContent(decrypted);
+      const { key, authToken } = await deriveViewKeys(paste, password);
+      const ciphertext = paste.burnAfterReading ? await claimStoredPaste(paste.id, authToken) : paste.ciphertext;
+      setContent(await decryptWithKey(key, paste.iv, ciphertext));
       setMode("ready");
+    } catch (caught) {
+      if (caught instanceof Error && caught.message === "bad-link") {
+        setMode("bad-link");
+        return;
+      }
 
-      if (paste.burnAfterReading) {
-        try {
-          await destroyStoredPaste(paste);
-        } catch {
-          toast.danger(copy.toast.destroyFailed);
+      if (caught instanceof ApiError) {
+        if (caught.message === "expired") {
+          setMode("expired");
+          return;
+        }
+        if (caught.message === "destroyed") {
+          setMode("destroyed");
+          return;
+        }
+        if (caught.message === "not-found") {
+          setMode("missing");
+          return;
+        }
+        if (caught.message !== "forbidden") {
+          setMode("error");
+          return;
         }
       }
-    } catch (caught) {
-      setMode(caught instanceof Error && caught.message === "bad-link" ? "bad-link" : "locked");
+
+      // Wrong password (claim rejected, or local AES-GCM failure) — content intact.
+      setMode("locked");
       setUnlockError(true);
     }
   };
@@ -161,6 +178,11 @@ export function ViewPaste({ copy, locale, pasteId }: { copy: Copy; locale: Local
               <p className="relative mt-1 max-w-sm text-center text-sm text-muted">
                 {paste?.passwordProtected ? copy.view.passwordPrompt : copy.view.unlockPrompt}
               </p>
+              {paste?.burnAfterReading ? (
+                <p className="relative mt-2 max-w-sm text-center text-sm font-medium text-warning">
+                  {copy.view.burnUnlockNotice}
+                </p>
+              ) : null}
             </div>
 
             {paste?.passwordProtected ? (

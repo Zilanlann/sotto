@@ -2,6 +2,8 @@ import type { StoredPaste } from "../types";
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
+const HKDF_ENCRYPTION_INFO = encoder.encode("sotto:enc");
+const HKDF_AUTH_INFO = encoder.encode("sotto:auth");
 
 function randomBytes(length: number): Uint8Array<ArrayBuffer> {
   const bytes = new Uint8Array(new ArrayBuffer(length));
@@ -43,20 +45,21 @@ export function createId() {
   return toBase64Url(randomBytes(10));
 }
 
-async function importAesKey(keyBytes: Uint8Array, usages: KeyUsage[]) {
-  return crypto.subtle.importKey("raw", toArrayBuffer(keyBytes), "AES-GCM", false, usages);
+export async function sha256Base64Url(value: string) {
+  const digest = await crypto.subtle.digest("SHA-256", toArrayBuffer(encoder.encode(value)));
+  return toBase64Url(new Uint8Array(digest));
 }
 
-async function derivePasswordKey(password: string, secret: string, salt: Uint8Array, usages: KeyUsage[]) {
+async function derivePasswordMaster(password: string, secret: string, salt: Uint8Array) {
   const keyMaterial = await crypto.subtle.importKey(
     "raw",
     encoder.encode(`${password}:${secret}`),
     "PBKDF2",
     false,
-    ["deriveKey"],
+    ["deriveBits"],
   );
 
-  return crypto.subtle.deriveKey(
+  const bits = await crypto.subtle.deriveBits(
     {
       name: "PBKDF2",
       salt: toArrayBuffer(salt),
@@ -64,59 +67,88 @@ async function derivePasswordKey(password: string, secret: string, salt: Uint8Ar
       hash: "SHA-256",
     },
     keyMaterial,
+    256,
+  );
+
+  return new Uint8Array(bits);
+}
+
+// Domain-separated sub-keys from one master: the AES key never leaves the
+// browser, while authToken is revealed to the server on claim, so knowing
+// one never yields the other.
+async function deriveSubKeys(masterBytes: Uint8Array, usages: KeyUsage[]) {
+  const master = await crypto.subtle.importKey("raw", toArrayBuffer(masterBytes), "HKDF", false, [
+    "deriveKey",
+    "deriveBits",
+  ]);
+
+  const key = await crypto.subtle.deriveKey(
+    { name: "HKDF", hash: "SHA-256", salt: new Uint8Array(), info: HKDF_ENCRYPTION_INFO },
+    master,
     { name: "AES-GCM", length: 256 },
     false,
     usages,
   );
+
+  const authBits = await crypto.subtle.deriveBits(
+    { name: "HKDF", hash: "SHA-256", salt: new Uint8Array(), info: HKDF_AUTH_INFO },
+    master,
+    256,
+  );
+
+  return { key, authToken: toBase64Url(new Uint8Array(authBits)) };
 }
 
 export async function encryptText(text: string, password: string) {
   const iv = randomBytes(12);
-  let key: CryptoKey;
+  let masterBytes: Uint8Array;
   let fragment: string;
   let salt: Uint8Array | undefined;
 
   if (password) {
     salt = randomBytes(16);
     const secret = toBase64Url(randomBytes(16));
-    key = await derivePasswordKey(password, secret, salt, ["encrypt"]);
+    masterBytes = await derivePasswordMaster(password, secret, salt);
     fragment = `s=${secret}`;
   } else {
-    const keyBytes = randomBytes(32);
-    key = await importAesKey(keyBytes, ["encrypt"]);
-    fragment = `k=${toBase64Url(keyBytes)}`;
+    masterBytes = randomBytes(32);
+    fragment = `k=${toBase64Url(masterBytes)}`;
   }
 
+  const { key, authToken } = await deriveSubKeys(masterBytes, ["encrypt"]);
   const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, toArrayBuffer(encoder.encode(text)));
 
   return {
     ciphertext: toBase64Url(new Uint8Array(encrypted)),
     iv: toBase64Url(iv),
     salt: salt ? toBase64Url(salt) : undefined,
+    authHash: await sha256Base64Url(authToken),
     fragment,
   };
 }
 
-export async function decryptText(paste: StoredPaste, password: string) {
+export async function deriveViewKeys(paste: Pick<StoredPaste, "passwordProtected" | "salt">, password: string) {
   const fragment = parseFragment();
-  let key: CryptoKey;
 
   if (paste.passwordProtected) {
     if (!fragment.secret || !paste.salt) {
       throw new Error("bad-link");
     }
-    key = await derivePasswordKey(password, fragment.secret, fromBase64Url(paste.salt), ["decrypt"]);
-  } else {
-    if (!fragment.key) {
-      throw new Error("bad-link");
-    }
-    key = await importAesKey(fromBase64Url(fragment.key), ["decrypt"]);
+    return deriveSubKeys(await derivePasswordMaster(password, fragment.secret, fromBase64Url(paste.salt)), ["decrypt"]);
   }
 
+  if (!fragment.key) {
+    throw new Error("bad-link");
+  }
+
+  return deriveSubKeys(fromBase64Url(fragment.key), ["decrypt"]);
+}
+
+export async function decryptWithKey(key: CryptoKey, iv: string, ciphertext: string) {
   const decrypted = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: fromBase64Url(paste.iv) },
+    { name: "AES-GCM", iv: fromBase64Url(iv) },
     key,
-    toArrayBuffer(fromBase64Url(paste.ciphertext)),
+    toArrayBuffer(fromBase64Url(ciphertext)),
   );
 
   return decoder.decode(decrypted);

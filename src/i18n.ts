@@ -52,7 +52,7 @@ export const COPY = {
       customMinutesLabel: "自定义分钟数",
       customMinutesDescription: "单位：分钟。最长 30 天，前后端都会校验。",
       burnLabel: "阅后即焚",
-      burnDescription: "成功解密后销毁服务器副本。",
+      burnDescription: "首次解锁的同时，服务器立即销毁副本。",
       passwordLabel: "访问密码",
       passwordDescription: "密码只参与本地密钥派生。",
       passwordFieldLabel: "密码",
@@ -77,7 +77,7 @@ export const COPY = {
     privacy: {
       title: "隐私模型",
       items: [
-        "只保存密文、IV、过期时间和访问策略。",
+        "只保存密文、IV、过期时间、访问策略和阅后即焚的领取校验哈希。",
         "不提供公开列表、搜索或服务端预览。",
         "解密密钥仅存在于链接片段，不入库、不进日志。",
       ],
@@ -93,6 +93,7 @@ export const COPY = {
       passwordLabel: "访问密码",
       passwordPlaceholder: "输入密码",
       passwordHelp: "密码不会发送给后端。",
+      burnUnlockNotice: "阅后即焚：解锁的同时服务器会销毁副本，内容仅能查看这一次。",
       unlockErrorTitle: "无法解锁",
       unlockErrorDescription: "密码错误、密钥不匹配，或内容无法解密。",
       destroyedCopyTitle: "服务器副本已销毁",
@@ -125,7 +126,6 @@ export const COPY = {
       createdDescription: "密钥已写入 # 片段，不会发往服务端。",
       createdLocalDescription: "后端暂不可用，密文已保存在当前浏览器（开发模式回退），链接无法跨浏览器访问。",
       copyFailed: "复制失败，请手动选择文本。",
-      destroyFailed: "内容已解密，但服务器副本销毁失败，请稍后重试。",
     },
   },
   en: {
@@ -179,7 +179,7 @@ export const COPY = {
       customMinutesLabel: "Custom minutes",
       customMinutesDescription: "Unit: minutes. Maximum 30 days, validated on both client and backend.",
       burnLabel: "Burn after reading",
-      burnDescription: "Destroy the server copy after successful decryption.",
+      burnDescription: "The server destroys its copy the moment the paste is first unlocked.",
       passwordLabel: "Access password",
       passwordDescription: "Password only participates in local key derivation.",
       passwordFieldLabel: "Password",
@@ -204,7 +204,7 @@ export const COPY = {
     privacy: {
       title: "Privacy Model",
       items: [
-        "Only ciphertext, IV, expiration, and access policy are stored.",
+        "Only ciphertext, IV, expiration, access policy, and a burn-claim verification hash are stored.",
         "No public listing, search, or server-side preview.",
         "The decryption key only exists in the URL fragment: not stored, not logged.",
       ],
@@ -220,6 +220,7 @@ export const COPY = {
       passwordLabel: "Access password",
       passwordPlaceholder: "Enter password",
       passwordHelp: "Password is never sent to the backend.",
+      burnUnlockNotice: "Burn after reading: unlocking destroys the server copy at the same time, so this is your only view.",
       unlockErrorTitle: "Cannot unlock",
       unlockErrorDescription: "Wrong password, mismatched key, or content cannot be decrypted.",
       destroyedCopyTitle: "Server copy destroyed",
@@ -253,7 +254,6 @@ export const COPY = {
       createdLocalDescription:
         "The backend is unavailable, so the ciphertext was saved in this browser only (dev fallback). The link cannot be opened in other browsers.",
       copyFailed: "Copy failed. Please select the text manually.",
-      destroyFailed: "Content decrypted, but destroying the server copy failed. Please retry later.",
     },
   },
 } as const;

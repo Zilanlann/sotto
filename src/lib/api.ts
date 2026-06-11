@@ -1,5 +1,7 @@
 import type { StoredPaste } from "../types";
 
+import { sha256Base64Url } from "./crypto";
+
 const STORAGE_KEY = "sotto:dev:pastes";
 const LOCAL_STORAGE_FALLBACK_ENABLED = import.meta.env.DEV;
 
@@ -86,16 +88,38 @@ async function readRemotePaste(id: string) {
   return data as StoredPaste;
 }
 
-async function destroyRemotePaste(id: string) {
-  const response = await fetch(`/api/pastes/${encodeURIComponent(id)}/destroy`, {
-    headers: { accept: "application/json" },
+async function claimRemotePaste(id: string, authToken: string) {
+  const response = await fetch(`/api/pastes/${encodeURIComponent(id)}/claim`, {
+    body: JSON.stringify({ authToken }),
+    headers: { "content-type": "application/json" },
     method: "POST",
   });
-  const data = await readJsonResponse<{ error?: string }>(response);
+  const data = await readJsonResponse<{ ciphertext?: string; error?: string }>(response);
 
   if (!response.ok) {
     throw new ApiError(data.error);
   }
+
+  return data.ciphertext ?? "";
+}
+
+async function claimLocalPaste(id: string, authToken: string) {
+  const paste = readLocalPaste(id);
+  if (!paste) {
+    throw new ApiError("not-found");
+  }
+  if (paste.expiresAt <= Date.now()) {
+    throw new ApiError("expired");
+  }
+  if (paste.destroyedAt) {
+    throw new ApiError("destroyed");
+  }
+  if (!paste.authHash || (await sha256Base64Url(authToken)) !== paste.authHash) {
+    throw new ApiError("forbidden");
+  }
+
+  writeLocalPaste(getDestroyedPaste(paste));
+  return paste.ciphertext;
 }
 
 export async function saveStoredPaste(paste: StoredPaste) {
@@ -135,18 +159,17 @@ export async function readStoredPaste(id: string) {
   return LOCAL_STORAGE_FALLBACK_ENABLED ? readLocalPaste(id) : null;
 }
 
-export async function destroyStoredPaste(paste: StoredPaste) {
-  const next = getDestroyedPaste(paste);
-
+export async function claimStoredPaste(id: string, authToken: string) {
   try {
-    await destroyRemotePaste(paste.id);
+    return await claimRemotePaste(id, authToken);
   } catch (caught) {
-    if (!(caught instanceof ApiUnavailableError && LOCAL_STORAGE_FALLBACK_ENABLED)) {
-      throw caught instanceof ApiUnavailableError ? new ApiError("api-unavailable") : caught;
+    if (caught instanceof ApiUnavailableError) {
+      if (LOCAL_STORAGE_FALLBACK_ENABLED) {
+        return claimLocalPaste(id, authToken);
+      }
+      throw new ApiError("api-unavailable");
     }
-  } finally {
-    if (LOCAL_STORAGE_FALLBACK_ENABLED) {
-      writeLocalPaste(next);
-    }
+
+    throw caught;
   }
 }

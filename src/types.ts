@@ -4,6 +4,8 @@ export type StoredPaste = {
   ciphertext: string;
   iv: string;
   salt?: string;
+  // SHA-256 of the claim token; kept server-side and stripped from API responses.
+  authHash?: string;
   createdAt: number;
   expiresAt: number;
   burnAfterReading: boolean;

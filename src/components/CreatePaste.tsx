@@ -119,6 +119,7 @@ export function CreatePaste({ copy }: { copy: Copy }) {
         ciphertext: encrypted.ciphertext,
         iv: encrypted.iv,
         salt: encrypted.salt,
+        authHash: encrypted.authHash,
         createdAt,
         expiresAt,
         burnAfterReading,
