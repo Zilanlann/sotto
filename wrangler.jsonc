@@ -1,23 +1,21 @@
 {
-  "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "sotto",
-  "main": "./src/worker.ts",
-  "compatibility_date": "2026-06-09",
-  "assets": {
-    "binding": "ASSETS",
-    "directory": "./dist",
-    "not_found_handling": "single-page-application",
-    "run_worker_first": true
-  },
-  "observability": {
-    "enabled": true
-  },
-  "kv_namespaces": [
-    {
-      // Replace this id with the namespace created by:
-      // npx wrangler kv namespace create PASTES
-      "id": "replace-with-production-kv-namespace-id",
-      "binding": "PASTES"
-    }
-  ]
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "sotto",
+	"main": "./src/worker.ts",
+	"compatibility_date": "2026-06-09",
+	"assets": {
+		"binding": "ASSETS",
+		"directory": "./dist",
+		"not_found_handling": "single-page-application",
+		"run_worker_first": true
+	},
+	"observability": {
+		"enabled": true
+	},
+	"kv_namespaces": [
+		{
+			"binding": "PASTES",
+			"id": "fdf5689f2be3464193f13e524037921c"
+		}
+	]
 }
