@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { COPY, type Locale } from "./i18n";
+import { renderMarkdown } from "./lib/format";
 
 export type Theme = "light" | "dark";
 
@@ -62,6 +63,30 @@ export function useTheme() {
   const toggle = () => setTheme((current) => (current === "dark" ? "light" : "dark"));
 
   return { theme, toggle };
+}
+
+export function useMarkdownPreview(content: string, enabled = true) {
+  const [html, setHtml] = useState("");
+
+  useEffect(() => {
+    if (!enabled || !content.trim()) {
+      setHtml("");
+      return;
+    }
+
+    let cancelled = false;
+    void renderMarkdown(content).then((rendered) => {
+      if (!cancelled) {
+        setHtml(rendered);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [content, enabled]);
+
+  return html;
 }
 
 export function useLocale() {

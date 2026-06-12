@@ -13,13 +13,13 @@ import {
   Tooltip,
 } from "@heroui/react";
 import { Clock3, Copy as CopyIcon, Eye, FileText, Flame, Lock, RefreshCw } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
-import { navigate } from "../hooks";
+import { navigate, useMarkdownPreview } from "../hooks";
 import type { Copy, Locale } from "../i18n";
 import { ApiError, claimStoredPaste, readStoredPaste } from "../lib/api";
 import { decryptWithKey, deriveViewKeys, parseFragment } from "../lib/crypto";
-import { formatBytes, formatExpiry, renderMarkdown } from "../lib/format";
+import { formatBytes, formatExpiry } from "../lib/format";
 import type { StoredPaste } from "../types";
 import { copyText, StatusChip } from "./shared";
 import { TerminalState, type TerminalMode } from "./TerminalState";
@@ -91,7 +91,7 @@ export function ViewPaste({ copy, locale, pasteId }: { copy: Copy; locale: Local
     };
   }, [pasteId]);
 
-  const previewHtml = useMemo(() => renderMarkdown(content), [content]);
+  const previewHtml = useMarkdownPreview(content, view === "preview");
 
   const unlock = async () => {
     if (!paste) {

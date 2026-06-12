@@ -1,6 +1,3 @@
-import DOMPurify from "dompurify";
-import { marked } from "marked";
-
 import type { Locale } from "../i18n";
 
 const encoder = new TextEncoder();
@@ -39,7 +36,13 @@ export function formatDateTime(timestamp: number, locale: Locale) {
   return new Date(timestamp).toLocaleString(locale === "zh" ? "zh-CN" : "en-US");
 }
 
-export function renderMarkdown(value: string) {
+// marked and DOMPurify are loaded on demand so they stay out of the
+// initial bundle until a Markdown preview is actually rendered.
+let markdownLibs: Promise<[typeof import("marked"), typeof import("dompurify")]> | undefined;
+
+export async function renderMarkdown(value: string) {
+  markdownLibs ??= Promise.all([import("marked"), import("dompurify")]);
+  const [{ marked }, { default: DOMPurify }] = await markdownLibs;
   const raw = marked.parse(value, { async: false }) as string;
   return DOMPurify.sanitize(raw);
 }

@@ -34,11 +34,12 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
+import { useMarkdownPreview } from "../hooks";
 import { ApiError, saveStoredPaste } from "../lib/api";
 import { createId, encryptText } from "../lib/crypto";
-import { byteLength, formatBytes, renderMarkdown } from "../lib/format";
+import { byteLength, formatBytes } from "../lib/format";
 import type { Copy } from "../i18n";
 import { MAX_BYTES, MAX_EXPIRY_MINUTES, type StoredPaste } from "../types";
 import { copyText, SectionLabel, SettingSwitch } from "./shared";
@@ -91,7 +92,7 @@ export function CreatePaste({ copy }: { copy: Copy }) {
   const meterColor = usagePercent > 95 ? "danger" : usagePercent > 75 ? "warning" : "success";
   const selectedExpiry = EXPIRY_OPTIONS.find((option) => option.key === expiryPreset)!;
   const expiryMinutes = expiryPreset === "custom" ? normalizeExpiryMinutes(customMinutes) : selectedExpiry.minutes;
-  const previewHtml = useMemo(() => renderMarkdown(content), [content]);
+  const previewHtml = useMarkdownPreview(content, editorMode === "preview");
   const passwordTooShort = passwordEnabled && password.length > 0 && password.length < MIN_PASSWORD_LENGTH;
   const canCreate =
     content.trim().length > 0 &&
