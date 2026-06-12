@@ -54,6 +54,48 @@ function jsonResponse(body: unknown, init: ResponseInit = {}) {
   return new Response(JSON.stringify(body), { ...init, headers });
 }
 
+// robots.txt and sitemap.xml are generated per-request so self-hosted
+// deployments advertise their own origin instead of a hardcoded domain.
+function seoTextResponse(body: string, contentType: string) {
+  const headers = new Headers();
+  setSecurityHeaders(headers);
+  headers.set("content-type", contentType);
+  headers.set("cache-control", "public, max-age=3600");
+
+  return new Response(body, { headers });
+}
+
+function robotsResponse(origin: string) {
+  return seoTextResponse(
+    ["User-agent: *", "Allow: /", "Disallow: /api/", "", `Sitemap: ${origin}/sitemap.xml`, ""].join("\n"),
+    "text/plain; charset=utf-8",
+  );
+}
+
+function sitemapResponse(origin: string) {
+  return seoTextResponse(
+    [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+      `  <url><loc>${origin}/</loc></url>`,
+      "</urlset>",
+      "",
+    ].join("\n"),
+    "application/xml; charset=utf-8",
+  );
+}
+
+function injectCanonicalTags(response: Response, origin: string) {
+  return new HTMLRewriter()
+    .on("head", {
+      element(head) {
+        head.append(`<link rel="canonical" href="${origin}/">`, { html: true });
+        head.append(`<meta property="og:url" content="${origin}/">`, { html: true });
+      },
+    })
+    .transform(response);
+}
+
 function emptyResponse(init: ResponseInit = {}) {
   const headers = new Headers(init.headers);
   setSecurityHeaders(headers);
@@ -355,6 +397,27 @@ export default {
       }
     }
 
-    return withSecurityHeaders(await env.ASSETS.fetch(request));
+    if (request.method === "GET" && url.pathname === "/robots.txt") {
+      return robotsResponse(url.origin);
+    }
+
+    if (request.method === "GET" && url.pathname === "/sitemap.xml") {
+      return sitemapResponse(url.origin);
+    }
+
+    const response = withSecurityHeaders(await env.ASSETS.fetch(request));
+
+    // Paste view pages are private, ephemeral content — keep them out of
+    // search indexes while the homepage stays indexable.
+    if (url.pathname === "/p" || url.pathname.startsWith("/p/")) {
+      response.headers.set("x-robots-tag", "noindex");
+      return response;
+    }
+
+    if (url.pathname === "/" && (response.headers.get("content-type") ?? "").includes("text/html")) {
+      return injectCanonicalTags(response, url.origin);
+    }
+
+    return response;
   },
 } satisfies ExportedHandler<Env>;

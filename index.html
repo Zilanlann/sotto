@@ -3,11 +3,39 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="robots" content="noindex,nofollow" />
     <meta name="referrer" content="no-referrer" />
     <meta name="color-scheme" content="dark light" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>Sotto</title>
+    <title>Sotto — 端到端加密的阅后即焚文本分享 | Encrypted Self-Destructing Pastebin</title>
+    <meta
+      name="description"
+      content="Sotto 是零知识架构的加密临时分享工具：内容在浏览器内以 AES-256 加密后才上传，支持阅后即焚、密码保护与自动过期。Share secrets with end-to-end encryption — burn after reading, password protection, self-expiring links."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Sotto" />
+    <meta property="og:title" content="Sotto — 端到端加密的阅后即焚文本分享" />
+    <meta
+      property="og:description"
+      content="零知识加密临时分享：浏览器内 AES-256 加密、阅后即焚、密码保护、自动过期。服务端只存密文，密钥永远留在你的浏览器。"
+    />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Sotto — End-to-End Encrypted Self-Destructing Pastebin" />
+    <meta
+      name="twitter:description"
+      content="Zero-knowledge encrypted paste sharing: AES-256 in the browser, burn after reading, password protection, self-expiring links."
+    />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Sotto",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Web",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "description": "End-to-end encrypted, self-expiring paste sharing. Content is encrypted with AES-256-GCM in the browser before upload; the server only ever stores ciphertext. Supports burn-after-reading, password protection, and Markdown.",
+        "inLanguage": ["zh-CN", "en"]
+      }
+    </script>
     <script>
       // Apply saved shell preferences before paint to avoid theme/language flash.
       (function () {
@@ -24,6 +52,14 @@
     </script>
   </head>
   <body>
+    <noscript>
+      <h1>Sotto — 端到端加密的阅后即焚文本分享</h1>
+      <p>
+        Sotto 在浏览器内完成 AES-256-GCM 加密后才上传内容，服务端只存密文；支持阅后即焚、密码保护与自动过期。
+        Sotto encrypts your paste in the browser before upload — the server only ever sees ciphertext. Burn after
+        reading, password protection, and self-expiring links. JavaScript is required to use this app.
+      </p>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
