@@ -125,3 +125,7 @@ npm run deploy
 - Review Worker observability after deployment for 4xx and 5xx spikes.
 - Use a dedicated custom domain and keep Cloudflare TLS mode on Full or stricter.
 - Run `npm run typecheck` and `npm run build` before every deploy.
+
+## License
+
+Sotto is licensed under the [Apache License 2.0](LICENSE). Commercial use is allowed, but redistributions and modified versions must preserve the copyright and license notices required by Apache 2.0.
