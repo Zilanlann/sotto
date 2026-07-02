@@ -1,9 +1,9 @@
 import { Button, Tooltip } from "@heroui/react";
-import { ArrowLeft, EyeOff, Languages, Moon, ShieldCheck, Sun } from "lucide-react";
+import { ArrowLeft, EyeOff, Info, Languages, Moon, ShieldCheck, Sun } from "lucide-react";
 
-import { navigate, useTheme } from "../hooks";
+import { navigate, useTheme, type Route } from "../hooks";
 import type { Copy } from "../i18n";
-import { BrandMark, StatusChip } from "./shared";
+import { AppLink, BrandMark, StatusChip } from "./shared";
 
 function ThemeToggle({ copy }: { copy: Copy }) {
   const { theme, toggle } = useTheme();
@@ -39,11 +39,11 @@ function LanguageToggle({ copy, onToggle }: { copy: Copy; onToggle: () => void }
 
 export function NavBar({
   copy,
-  routeId,
+  route,
   onToggleLocale,
 }: {
   copy: Copy;
-  routeId: string | null;
+  route: Route;
   onToggleLocale: () => void;
 }) {
   return (
@@ -52,10 +52,9 @@ export function NavBar({
       style={{ backgroundColor: "color-mix(in oklab, var(--background) 78%, transparent)" }}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
-        <button
+        <AppLink
           className="flex items-center gap-3 rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-focus"
-          onClick={() => navigate("/")}
-          type="button"
+          href="/"
         >
           <BrandMark className="size-9" />
           <div className="leading-tight">
@@ -67,7 +66,7 @@ export function NavBar({
             </div>
             <p className="font-mono text-xs text-muted">{copy.nav.tagline}</p>
           </div>
-        </button>
+        </AppLink>
 
         <div className="flex items-center gap-2">
           <div className="hidden items-center gap-2 md:flex">
@@ -76,12 +75,21 @@ export function NavBar({
             </StatusChip>
             <StatusChip icon={<EyeOff className="size-3" />}>{copy.nav.noServerLogs}</StatusChip>
           </div>
-          {routeId ? (
+          {route.name !== "create" ? (
             <Button size="sm" variant="secondary" onPress={() => navigate("/")}>
               <ArrowLeft className="size-4" />
               {copy.nav.newPaste}
             </Button>
           ) : null}
+          <Button
+            aria-label={copy.nav.about}
+            size="sm"
+            variant={route.name === "about" ? "secondary" : "ghost"}
+            onPress={() => navigate("/about")}
+          >
+            <Info className="size-4" />
+            <span className="hidden sm:inline">{copy.nav.about}</span>
+          </Button>
           <LanguageToggle copy={copy} onToggle={onToggleLocale} />
           <ThemeToggle copy={copy} />
         </div>

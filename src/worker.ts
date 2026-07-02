@@ -78,6 +78,7 @@ function sitemapResponse(origin: string) {
       '<?xml version="1.0" encoding="UTF-8"?>',
       '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
       `  <url><loc>${origin}/</loc></url>`,
+      `  <url><loc>${origin}/about</loc></url>`,
       "</urlset>",
       "",
     ].join("\n"),
@@ -85,15 +86,48 @@ function sitemapResponse(origin: string) {
   );
 }
 
-function injectCanonicalTags(response: Response, origin: string) {
-  return new HTMLRewriter()
-    .on("head", {
-      element(head) {
-        head.append(`<link rel="canonical" href="${origin}/">`, { html: true });
-        head.append(`<meta property="og:url" content="${origin}/">`, { html: true });
+// index.html ships homepage metadata; indexable non-home routes get their
+// own title/description rewritten here so crawlers that skip JavaScript
+// still see per-page metadata.
+const PAGE_META: Record<string, { title: string; description: string } | undefined> = {
+  "/about": {
+    title: "关于 Sotto · 零知识加密如何工作 | About Sotto — How Zero-Knowledge Encryption Works",
+    description:
+      "了解 Sotto 的零知识架构：内容在浏览器内以 AES-256-GCM 加密，密钥只存在于链接 # 片段，支持阅后即焚一次性领取、密码保护与自动过期。Learn how Sotto keeps pastes private: client-side AES-256 encryption, keys in the URL fragment, burn-after-reading, and automatic expiry.",
+  },
+};
+
+function injectSeoTags(response: Response, origin: string, path: string) {
+  const rewriter = new HTMLRewriter().on("head", {
+    element(head) {
+      head.append(`<link rel="canonical" href="${origin}${path}">`, { html: true });
+      head.append(`<meta property="og:url" content="${origin}${path}">`, { html: true });
+    },
+  });
+
+  const meta = PAGE_META[path];
+  if (meta) {
+    const setContent = (value: string) => ({
+      element(element: Element) {
+        element.setAttribute("content", value);
       },
-    })
-    .transform(response);
+    });
+
+    rewriter.on("title", {
+      element(title) {
+        title.setInnerContent(meta.title);
+      },
+    });
+    // HTMLRewriter has no selector lists, so each tag is registered separately.
+    for (const selector of ['meta[property="og:title"]', 'meta[name="twitter:title"]']) {
+      rewriter.on(selector, setContent(meta.title));
+    }
+    for (const selector of ['meta[name="description"]', 'meta[property="og:description"]', 'meta[name="twitter:description"]']) {
+      rewriter.on(selector, setContent(meta.description));
+    }
+  }
+
+  return rewriter.transform(response);
 }
 
 function emptyResponse(init: ResponseInit = {}) {
@@ -414,8 +448,9 @@ export default {
       return response;
     }
 
-    if (url.pathname === "/" && (response.headers.get("content-type") ?? "").includes("text/html")) {
-      return injectCanonicalTags(response, url.origin);
+    const indexablePath = url.pathname === "/" ? "/" : url.pathname === "/about" || url.pathname === "/about/" ? "/about" : null;
+    if (indexablePath && (response.headers.get("content-type") ?? "").includes("text/html")) {
+      return injectSeoTags(response, url.origin, indexablePath);
     }
 
     return response;

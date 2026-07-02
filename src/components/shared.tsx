@@ -1,5 +1,30 @@
 import { Chip, Description, Label, Switch, toast } from "@heroui/react";
 
+import { navigate } from "../hooks";
+
+// Real anchor for internal routes: crawlers and middle-click get a plain
+// link, while normal clicks stay inside the SPA router.
+export function AppLink({
+  href,
+  className,
+  children,
+  ...rest
+}: React.AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) {
+  const onClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return;
+    }
+    event.preventDefault();
+    navigate(href);
+  };
+
+  return (
+    <a className={className} href={href} onClick={onClick} {...rest}>
+      {children}
+    </a>
+  );
+}
+
 export async function copyText(value: string, message: string, failureMessage: string) {
   try {
     await navigator.clipboard.writeText(value);

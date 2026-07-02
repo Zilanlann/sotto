@@ -7,6 +7,7 @@ export const COPY = {
       tagline: "端到端加密 · 临时分享",
       noServerLogs: "无服务端日志",
       newPaste: "新建",
+      about: "关于",
     },
     theme: {
       aria: "切换主题",
@@ -127,6 +128,98 @@ export const COPY = {
       createdLocalDescription: "后端暂不可用，密文已保存在当前浏览器（开发模式回退），链接无法跨浏览器访问。",
       copyFailed: "复制失败，请手动选择文本。",
     },
+    about: {
+      pageTitle: "关于 Sotto · 零知识加密如何工作",
+      badge: "关于 Sotto",
+      titleStart: "Sotto 如何守护",
+      titleHighlight: "你的秘密",
+      intro:
+        "Sotto（取自意大利语 sotto voce，「低声耳语」）是一个端到端加密的临时文本分享工具。所有加密和解密都在你的浏览器里完成，服务器从头到尾只见过密文；链接到期后内容自动消失，启用阅后即焚时更是读取一次即销毁，就像一句说完就散的悄悄话。",
+      howItWorks: {
+        title: "工作原理",
+        steps: [
+          {
+            title: "浏览器内加密",
+            description:
+              "点击创建时，内容先在本地用 Web Crypto 生成的随机密钥完成 AES-256-GCM 加密，明文从不离开你的设备。",
+          },
+          {
+            title: "服务器只存密文",
+            description:
+              "上传的只有密文、初始化向量和过期策略。存储层到期自动删除，没有公开列表、搜索或服务端预览。",
+          },
+          {
+            title: "密钥藏在链接里",
+            description:
+              "解密密钥写在链接的 # 片段中。浏览器不会把 # 之后的内容发给服务器，只有拿到完整链接的人才能解密。",
+          },
+        ],
+      },
+      features: {
+        title: "核心功能",
+        items: [
+          {
+            title: "阅后即焚",
+            description: "首次解锁的同时，服务器通过一次性领取接口销毁存储副本，适合传递一次性凭证。",
+          },
+          {
+            title: "密码保护",
+            description: "密码只参与本地密钥派生（PBKDF2 + HKDF），从不上传，为链接再加一道防线。",
+          },
+          {
+            title: "自动过期",
+            description: "从 10 分钟到最长 30 天，到期即由存储层自动删除，无需手动清理。",
+          },
+          {
+            title: "Markdown 渲染",
+            description: "支持 Markdown 编写与预览，解密后在本地渲染并经过消毒处理。",
+          },
+        ],
+      },
+      storage: {
+        title: "服务器知道什么",
+        description: "零知识架构的意思是：即使数据库被完整拿走，攻击者得到的也只是一堆无法解密的密文。",
+        storedTitle: "会保存",
+        stored: ["密文与初始化向量", "过期时间与访问策略", "阅后即焚的领取校验哈希"],
+        notStoredTitle: "永远不会保存",
+        notStored: ["明文内容", "解密密钥或访问密码", "创建者或访问者的身份账号信息"],
+      },
+      faq: {
+        title: "常见问题",
+        items: [
+          {
+            question: "Sotto 能看到我分享的内容吗？",
+            answer:
+              "不能。内容在浏览器内加密后才上传，解密密钥只存在于链接的 # 片段，浏览器从不把它发送给服务器。即使数据库被完整泄露，泄露的也只是密文。",
+          },
+          {
+            question: "阅后即焚是如何实现的？",
+            answer:
+              "启用阅后即焚的密文需要通过一次性领取接口解锁：服务器校验领取凭证后返回密文，并在同一时刻销毁存储副本。解锁需要在页面内主动点击，链接预览机器人不会误触发销毁。",
+          },
+          {
+            question: "忘记密码或弄丢链接怎么办？",
+            answer:
+              "无法找回。零知识架构意味着服务器上既没有密钥也没有密码，任何人（包括运营者）都无法替你解密，只能重新创建一个分享。",
+          },
+          {
+            question: "内容最长保存多久？",
+            answer:
+              "最长 30 天。可选择 10 分钟、1 小时、1 天、7 天等快捷时长，或自定义分钟数；到期后由存储层自动删除。",
+          },
+          {
+            question: "Sotto 和普通 Pastebin 有什么区别？",
+            answer:
+              "普通 Pastebin 把明文存在服务器上，运营方和任何入侵者都能直接阅读。Sotto 的服务器只存密文，隐私不依赖运营方的承诺，而由密码学保证。",
+          },
+        ],
+      },
+      cta: {
+        title: "试试看",
+        description: "不需要注册，粘贴内容就能生成一条会自动消失的加密链接。",
+        button: "创建加密分享",
+      },
+    },
   },
   en: {
     pageTitle: "Sotto · End-to-end encrypted temporary sharing",
@@ -134,6 +227,7 @@ export const COPY = {
       tagline: "End-to-end encrypted · Temporary sharing",
       noServerLogs: "No server logs",
       newPaste: "New",
+      about: "About",
     },
     theme: {
       aria: "Toggle theme",
@@ -254,6 +348,101 @@ export const COPY = {
       createdLocalDescription:
         "The backend is unavailable, so the ciphertext was saved in this browser only (dev fallback). The link cannot be opened in other browsers.",
       copyFailed: "Copy failed. Please select the text manually.",
+    },
+    about: {
+      pageTitle: "About Sotto · How zero-knowledge encryption works",
+      badge: "About Sotto",
+      titleStart: "How Sotto keeps ",
+      titleHighlight: "your secrets safe",
+      intro:
+        "Sotto (from the Italian sotto voce, “in a whisper”) is an end-to-end encrypted tool for sharing text temporarily. Encryption and decryption happen entirely in your browser — the server only ever sees ciphertext. Content disappears when the link expires — and with burn after reading enabled, the moment it is first read — like a whisper that fades.",
+      howItWorks: {
+        title: "How it works",
+        steps: [
+          {
+            title: "Encrypted in your browser",
+            description:
+              "When you hit create, the content is encrypted locally with AES-256-GCM using a random key from Web Crypto. Plaintext never leaves your device.",
+          },
+          {
+            title: "The server stores ciphertext only",
+            description:
+              "Only the ciphertext, initialization vector, and expiry policy are uploaded. Storage deletes entries automatically on expiry — no public listing, search, or server-side preview.",
+          },
+          {
+            title: "The key lives in the link",
+            description:
+              "The decryption key is written into the URL # fragment. Browsers never send anything after the # to the server, so only someone with the full link can decrypt.",
+          },
+        ],
+      },
+      features: {
+        title: "Core features",
+        items: [
+          {
+            title: "Burn after reading",
+            description:
+              "The first unlock destroys the server copy through a one-time claim endpoint — ideal for one-off credentials.",
+          },
+          {
+            title: "Password protection",
+            description:
+              "The password only participates in local key derivation (PBKDF2 + HKDF) and is never uploaded, adding a second line of defense to the link.",
+          },
+          {
+            title: "Automatic expiry",
+            description: "From 10 minutes up to 30 days — storage deletes expired entries automatically, no cleanup needed.",
+          },
+          {
+            title: "Markdown rendering",
+            description: "Write and preview Markdown; decrypted content is rendered locally and sanitized.",
+          },
+        ],
+      },
+      storage: {
+        title: "What the server knows",
+        description:
+          "Zero-knowledge means that even if the entire database were stolen, an attacker would only hold undecryptable ciphertext.",
+        storedTitle: "Stored",
+        stored: ["Ciphertext and initialization vector", "Expiry time and access policy", "A burn-claim verification hash"],
+        notStoredTitle: "Never stored",
+        notStored: ["Plaintext content", "Decryption keys or access passwords", "Accounts or identity of authors and readers"],
+      },
+      faq: {
+        title: "Frequently asked questions",
+        items: [
+          {
+            question: "Can Sotto read what I share?",
+            answer:
+              "No. Content is encrypted in the browser before upload, and the decryption key only exists in the URL # fragment, which browsers never send to the server. Even a full database leak would expose nothing but ciphertext.",
+          },
+          {
+            question: "How does burn after reading work?",
+            answer:
+              "Burn-protected ciphertext is released through a one-time claim endpoint: the server verifies the claim token, returns the ciphertext, and destroys its copy in the same moment. Unlocking requires an explicit click on the page, so link-preview bots cannot trigger the burn.",
+          },
+          {
+            question: "What if I forget the password or lose the link?",
+            answer:
+              "It cannot be recovered. Zero-knowledge means the server holds neither the key nor the password, so nobody — including the operators — can decrypt it for you. Create a new paste instead.",
+          },
+          {
+            question: "How long is content kept?",
+            answer:
+              "Up to 30 days. Pick a quick preset (10 minutes, 1 hour, 1 day, 7 days) or a custom duration in minutes; expired entries are deleted automatically by the storage layer.",
+          },
+          {
+            question: "How is Sotto different from a regular pastebin?",
+            answer:
+              "A regular pastebin stores plaintext on the server, readable by operators and intruders alike. Sotto's server only ever stores ciphertext — your privacy rests on cryptography, not on an operator's promise.",
+          },
+        ],
+      },
+      cta: {
+        title: "Try it out",
+        description: "No sign-up needed — paste your content and get an encrypted, self-destructing link.",
+        button: "Create an encrypted paste",
+      },
     },
   },
 } as const;

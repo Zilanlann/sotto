@@ -8,22 +8,33 @@ export type Theme = "light" | "dark";
 const THEME_KEY = "sotto:theme";
 const LOCALE_KEY = "sotto:locale";
 
-function getRoute() {
-  const match = window.location.pathname.match(/^\/p\/([^/]+)/);
+export type Route = { name: "create" } | { name: "about" } | { name: "view"; pasteId: string };
 
-  return match?.[1] ?? null;
+function getRoute(): Route {
+  const path = window.location.pathname;
+  const pasteMatch = path.match(/^\/p\/([^/]+)/);
+
+  if (pasteMatch) {
+    return { name: "view", pasteId: pasteMatch[1] };
+  }
+
+  if (path === "/about" || path === "/about/") {
+    return { name: "about" };
+  }
+
+  return { name: "create" };
 }
 
-export function useRouteId() {
-  const [routeId, setRouteId] = useState(() => getRoute());
+export function useRoute() {
+  const [route, setRoute] = useState<Route>(() => getRoute());
 
   useEffect(() => {
-    const sync = () => setRouteId(getRoute());
+    const sync = () => setRoute(getRoute());
     window.addEventListener("popstate", sync);
     return () => window.removeEventListener("popstate", sync);
   }, []);
 
-  return routeId;
+  return route;
 }
 
 export function navigate(path: string) {
@@ -95,13 +106,12 @@ export function useLocale() {
 
   useEffect(() => {
     document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";
-    document.title = copy.pageTitle;
     try {
       window.localStorage.setItem(LOCALE_KEY, locale);
     } catch {
       // ignore persistence failures (private mode, etc.)
     }
-  }, [copy.pageTitle, locale]);
+  }, [locale]);
 
   const toggle = () => setLocale((current) => (current === "zh" ? "en" : "zh"));
 
