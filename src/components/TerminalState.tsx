@@ -1,7 +1,7 @@
 import { Button, Card, Chip } from "@heroui/react";
 import { ArrowLeft, FileText, KeyRound, TimerReset, Trash2 } from "lucide-react";
 
-import { navigate } from "../hooks";
+import { localePath, navigate } from "../hooks";
 import type { Copy, Locale } from "../i18n";
 import { formatDateTime } from "../lib/format";
 import type { StoredPaste } from "../types";
@@ -76,7 +76,7 @@ export function TerminalState({
           </Chip>
         </Card.Content>
         <Card.Footer className="justify-center">
-          <Button variant="secondary" onPress={() => navigate("/")}>
+          <Button variant="secondary" onPress={() => navigate(localePath(locale, "/"))}>
             <ArrowLeft className="size-4" />
             {copy.terminal.back}
           </Button>

@@ -1,22 +1,25 @@
 <!doctype html>
-<html lang="zh-CN" data-theme="dark">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="referrer" content="no-referrer" />
     <meta name="color-scheme" content="dark light" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>Sotto — 端到端加密的阅后即焚文本分享 | Encrypted Self-Destructing Pastebin</title>
+    <!-- English metadata is the static fallback for the root routes (/, /about);
+         the worker rewrites every tag below per language for indexable routes. -->
+    <title>Sotto — End-to-End Encrypted Self-Destructing Pastebin</title>
     <meta
       name="description"
-      content="Sotto 是零知识架构的加密临时分享工具：内容在浏览器内以 AES-256 加密后才上传，支持阅后即焚、密码保护与自动过期。Share secrets with end-to-end encryption — burn after reading, password protection, self-expiring links."
+      content="Sotto is a zero-knowledge encrypted pastebin: content is encrypted with AES-256 in your browser before upload. Burn after reading, password protection, self-expiring links — the server only ever stores ciphertext."
     />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Sotto" />
-    <meta property="og:title" content="Sotto — 端到端加密的阅后即焚文本分享" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:title" content="Sotto — End-to-End Encrypted Self-Destructing Pastebin" />
     <meta
       property="og:description"
-      content="零知识加密临时分享：浏览器内 AES-256 加密、阅后即焚、密码保护、自动过期。服务端只存密文，密钥永远留在你的浏览器。"
+      content="Zero-knowledge encrypted paste sharing: AES-256 in the browser, burn after reading, password protection, self-expiring links."
     />
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="Sotto — End-to-End Encrypted Self-Destructing Pastebin" />
@@ -38,26 +41,36 @@
     </script>
     <script>
       // Apply saved shell preferences before paint to avoid theme/language flash.
+      // Language is path-driven on localized routes (/zh/*, /, /about); the
+      // stored preference only applies to unlocalized routes like /p/:id.
       (function () {
+        var path = location.pathname;
+        var lang;
+        if (path === "/zh" || path.indexOf("/zh/") === 0) {
+          lang = "zh-CN";
+        } else if (path === "/" || path.indexOf("/about") === 0) {
+          lang = "en";
+        }
         try {
           var saved = localStorage.getItem("sotto:theme");
           var savedLocale = localStorage.getItem("sotto:locale");
           document.documentElement.dataset.theme = saved === "light" ? "light" : "dark";
-          document.documentElement.lang = savedLocale === "en" ? "en" : "zh-CN";
+          document.documentElement.lang = lang || (savedLocale === "zh" ? "zh-CN" : "en");
         } catch (e) {
           document.documentElement.dataset.theme = "dark";
-          document.documentElement.lang = "zh-CN";
+          document.documentElement.lang = lang || "en";
         }
       })();
     </script>
   </head>
   <body>
     <noscript>
-      <h1>Sotto — 端到端加密的阅后即焚文本分享</h1>
+      <h1>Sotto — End-to-End Encrypted Self-Destructing Pastebin</h1>
       <p>
+        Sotto encrypts your paste in the browser with AES-256-GCM before upload — the server only ever sees
+        ciphertext. Burn after reading, password protection, and self-expiring links.
         Sotto 在浏览器内完成 AES-256-GCM 加密后才上传内容，服务端只存密文；支持阅后即焚、密码保护与自动过期。
-        Sotto encrypts your paste in the browser before upload — the server only ever sees ciphertext. Burn after
-        reading, password protection, and self-expiring links. JavaScript is required to use this app.
+        JavaScript is required to use this app.
       </p>
     </noscript>
     <div id="root"></div>

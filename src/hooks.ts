@@ -10,8 +10,36 @@ const LOCALE_KEY = "sotto:locale";
 
 export type Route = { name: "create" } | { name: "about" } | { name: "view"; pasteId: string };
 
-function getRoute(): Route {
+// Chinese pages live under /zh/ so each language has its own indexable URL;
+// English stays at the root. Paste links (/p/:id) are shared URLs and carry
+// no language prefix.
+export function localePath(locale: Locale, page: "/" | "/about") {
+  if (locale === "zh") {
+    return page === "/" ? "/zh/" : "/zh/about";
+  }
+  return page;
+}
+
+function stripLocalePrefix(path: string) {
+  if (path === "/zh" || path === "/zh/") {
+    return "/";
+  }
+  return path.startsWith("/zh/") ? path.slice(3) : path;
+}
+
+function getPathLocale(): Locale | null {
   const path = window.location.pathname;
+  if (path === "/zh" || path.startsWith("/zh/")) {
+    return "zh";
+  }
+  if (path === "/" || path === "/about" || path === "/about/") {
+    return "en";
+  }
+  return null;
+}
+
+function getRoute(): Route {
+  const path = stripLocalePrefix(window.location.pathname);
   const pasteMatch = path.match(/^\/p\/([^/]+)/);
 
   if (pasteMatch) {
@@ -101,8 +129,19 @@ export function useMarkdownPreview(content: string, enabled = true) {
 }
 
 export function useLocale() {
-  const [locale, setLocale] = useState<Locale>(getInitialLocale);
+  const [locale, setLocale] = useState<Locale>(() => getPathLocale() ?? getInitialLocale());
   const copy = COPY[locale];
+
+  useEffect(() => {
+    const sync = () => {
+      const pathLocale = getPathLocale();
+      if (pathLocale) {
+        setLocale(pathLocale);
+      }
+    };
+    window.addEventListener("popstate", sync);
+    return () => window.removeEventListener("popstate", sync);
+  }, []);
 
   useEffect(() => {
     document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";
@@ -113,7 +152,16 @@ export function useLocale() {
     }
   }, [locale]);
 
-  const toggle = () => setLocale((current) => (current === "zh" ? "en" : "zh"));
+  // On localized pages the URL is the source of truth, so switching language
+  // navigates to the same page under the other locale's path.
+  const toggle = () => {
+    const next = locale === "zh" ? "en" : "zh";
+    if (getPathLocale()) {
+      const page = stripLocalePrefix(window.location.pathname).startsWith("/about") ? "/about" : "/";
+      navigate(localePath(next, page));
+    }
+    setLocale(next);
+  };
 
   return { locale, copy, toggle };
 }

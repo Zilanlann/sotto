@@ -18,17 +18,17 @@ function App() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <NavBar copy={copy} route={route} onToggleLocale={toggle} />
+      <NavBar copy={copy} locale={locale} route={route} onToggleLocale={toggle} />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
         {route.name === "view" ? (
           <ViewPaste copy={copy} locale={locale} pasteId={route.pasteId} />
         ) : route.name === "about" ? (
-          <AboutPage copy={copy} />
+          <AboutPage copy={copy} locale={locale} />
         ) : (
           <CreatePaste copy={copy} />
         )}
       </main>
-      <SiteFooter copy={copy} />
+      <SiteFooter copy={copy} locale={locale} />
       <Toast.Provider />
     </div>
   );

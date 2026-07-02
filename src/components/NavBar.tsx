@@ -1,8 +1,8 @@
 import { Button, Tooltip } from "@heroui/react";
 import { ArrowLeft, EyeOff, Info, Languages, Moon, ShieldCheck, Sun } from "lucide-react";
 
-import { navigate, useTheme, type Route } from "../hooks";
-import type { Copy } from "../i18n";
+import { localePath, navigate, useTheme, type Route } from "../hooks";
+import type { Copy, Locale } from "../i18n";
 import { AppLink, BrandMark, StatusChip } from "./shared";
 
 function ThemeToggle({ copy }: { copy: Copy }) {
@@ -39,10 +39,12 @@ function LanguageToggle({ copy, onToggle }: { copy: Copy; onToggle: () => void }
 
 export function NavBar({
   copy,
+  locale,
   route,
   onToggleLocale,
 }: {
   copy: Copy;
+  locale: Locale;
   route: Route;
   onToggleLocale: () => void;
 }) {
@@ -54,7 +56,7 @@ export function NavBar({
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
         <AppLink
           className="flex items-center gap-3 rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-focus"
-          href="/"
+          href={localePath(locale, "/")}
         >
           <BrandMark className="size-9" />
           <div className="leading-tight">
@@ -76,7 +78,7 @@ export function NavBar({
             <StatusChip icon={<EyeOff className="size-3" />}>{copy.nav.noServerLogs}</StatusChip>
           </div>
           {route.name !== "create" ? (
-            <Button size="sm" variant="secondary" onPress={() => navigate("/")}>
+            <Button size="sm" variant="secondary" onPress={() => navigate(localePath(locale, "/"))}>
               <ArrowLeft className="size-4" />
               {copy.nav.newPaste}
             </Button>
@@ -85,7 +87,7 @@ export function NavBar({
             aria-label={copy.nav.about}
             size="sm"
             variant={route.name === "about" ? "secondary" : "ghost"}
-            onPress={() => navigate("/about")}
+            onPress={() => navigate(localePath(locale, "/about"))}
           >
             <Info className="size-4" />
             <span className="hidden sm:inline">{copy.nav.about}</span>

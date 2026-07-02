@@ -2,7 +2,7 @@ export type Locale = "zh" | "en";
 
 export const COPY = {
   zh: {
-    pageTitle: "Sotto · 端到端加密的临时分享",
+    pageTitle: "Sotto — 端到端加密的阅后即焚文本分享",
     nav: {
       tagline: "端到端加密 · 临时分享",
       noServerLogs: "无服务端日志",
@@ -222,7 +222,7 @@ export const COPY = {
     },
   },
   en: {
-    pageTitle: "Sotto · End-to-end encrypted temporary sharing",
+    pageTitle: "Sotto — End-to-End Encrypted Self-Destructing Pastebin",
     nav: {
       tagline: "End-to-end encrypted · Temporary sharing",
       noServerLogs: "No server logs",
@@ -350,7 +350,7 @@ export const COPY = {
       copyFailed: "Copy failed. Please select the text manually.",
     },
     about: {
-      pageTitle: "About Sotto · How zero-knowledge encryption works",
+      pageTitle: "About Sotto · How Zero-Knowledge Encryption Works",
       badge: "About Sotto",
       titleStart: "How Sotto keeps ",
       titleHighlight: "your secrets safe",

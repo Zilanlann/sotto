@@ -15,7 +15,7 @@ import {
 import { Clock3, Copy as CopyIcon, Eye, FileText, Flame, Lock, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { navigate, useMarkdownPreview } from "../hooks";
+import { localePath, navigate, useMarkdownPreview } from "../hooks";
 import type { Copy, Locale } from "../i18n";
 import { ApiError, claimStoredPaste, readStoredPaste } from "../lib/api";
 import { decryptWithKey, deriveViewKeys, parseFragment } from "../lib/crypto";
@@ -271,7 +271,7 @@ export function ViewPaste({ copy, locale, pasteId }: { copy: Copy; locale: Local
 
         <Card.Footer className="flex flex-wrap gap-2">
           {mode === "ready" ? (
-            <Button variant="secondary" onPress={() => navigate("/")}>
+            <Button variant="secondary" onPress={() => navigate(localePath(locale, "/"))}>
               <RefreshCw className="size-4" />
               {copy.view.createNew}
             </Button>

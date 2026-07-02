@@ -1,8 +1,8 @@
 import { Button, Card, Chip, Separator } from "@heroui/react";
 import { Check, Clock3, FileText, Flame, HelpCircle, KeyRound, Lock, Server, Sparkles, X } from "lucide-react";
 
-import { navigate } from "../hooks";
-import type { Copy } from "../i18n";
+import { localePath, navigate } from "../hooks";
+import type { Copy, Locale } from "../i18n";
 
 const FEATURE_ICONS = [
   <Flame key="burn" className="size-4 text-warning" />,
@@ -28,7 +28,7 @@ function FaqJsonLd({ copy }: { copy: Copy }) {
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />;
 }
 
-export function AboutPage({ copy }: { copy: Copy }) {
+export function AboutPage({ copy, locale }: { copy: Copy; locale: Locale }) {
   const about = copy.about;
 
   return (
@@ -138,7 +138,7 @@ export function AboutPage({ copy }: { copy: Copy }) {
       <section className="animate-rise-2 flex flex-col items-start gap-3 rounded-2xl border border-accent/30 bg-surface-secondary/50 p-6">
         <h2 className="text-xl font-semibold tracking-tight">{about.cta.title}</h2>
         <p className="text-sm text-muted">{about.cta.description}</p>
-        <Button className="brand-glow" size="lg" onPress={() => navigate("/")}>
+        <Button className="brand-glow" size="lg" onPress={() => navigate(localePath(locale, "/"))}>
           <Lock className="size-4" />
           {about.cta.button}
         </Button>

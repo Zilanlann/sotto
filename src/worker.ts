@@ -72,13 +72,93 @@ function robotsResponse(origin: string) {
   );
 }
 
+// Each language lives on its own URL (en at /, zh under /zh/) so search
+// engines can index and serve single-language results per user language.
+type SeoLocale = "zh" | "en";
+type SeoPage = "/" | "/about";
+
+const SEO_LOCALES: Record<SeoLocale, { lang: string; ogLocale: string; pages: Record<SeoPage, { title: string; description: string }> }> = {
+  zh: {
+    lang: "zh-CN",
+    ogLocale: "zh_CN",
+    pages: {
+      "/": {
+        title: "Sotto — 端到端加密的阅后即焚文本分享",
+        description:
+          "Sotto 是零知识架构的加密临时分享工具：内容在浏览器内以 AES-256 加密后才上传，支持阅后即焚、密码保护与自动过期。服务端只存密文，密钥永远留在你的浏览器。",
+      },
+      "/about": {
+        title: "关于 Sotto · 零知识加密如何工作",
+        description:
+          "了解 Sotto 的零知识架构：内容在浏览器内以 AES-256-GCM 加密，密钥只存在于链接 # 片段，支持阅后即焚一次性领取、密码保护与自动过期。",
+      },
+    },
+  },
+  en: {
+    lang: "en",
+    ogLocale: "en_US",
+    pages: {
+      "/": {
+        title: "Sotto — End-to-End Encrypted Self-Destructing Pastebin",
+        description:
+          "Sotto is a zero-knowledge encrypted pastebin: content is encrypted with AES-256 in your browser before upload. Burn after reading, password protection, self-expiring links — the server only ever stores ciphertext.",
+      },
+      "/about": {
+        title: "About Sotto · How Zero-Knowledge Encryption Works",
+        description:
+          "Learn how Sotto keeps pastes private: client-side AES-256-GCM encryption, keys kept in the URL fragment, burn-after-reading one-time claims, password protection, and automatic expiry.",
+      },
+    },
+  },
+};
+
+function localizedPath(locale: SeoLocale, page: SeoPage) {
+  if (locale === "zh") {
+    return page === "/" ? "/zh/" : "/zh/about";
+  }
+  return page;
+}
+
+function parseIndexablePath(pathname: string): { locale: SeoLocale; page: SeoPage } | null {
+  if (pathname === "/") return { locale: "en", page: "/" };
+  if (pathname === "/about") return { locale: "en", page: "/about" };
+  if (pathname === "/zh/") return { locale: "zh", page: "/" };
+  if (pathname === "/zh/about") return { locale: "zh", page: "/about" };
+  return null;
+}
+
+// Trailing-slash and bare-prefix variants 301 to one canonical URL per page
+// so search engines never index duplicates. The retired /en/* prefix (English
+// now lives at the root) redirects too so old links keep working.
+const CANONICAL_REDIRECTS: Record<string, string | undefined> = {
+  "/zh": "/zh/",
+  "/about/": "/about",
+  "/zh/about/": "/zh/about",
+  "/en": "/",
+  "/en/": "/",
+  "/en/about": "/about",
+  "/en/about/": "/about",
+};
+
+function sitemapUrlEntry(origin: string, page: SeoPage) {
+  const alternates = [
+    `    <xhtml:link rel="alternate" hreflang="zh-CN" href="${origin}${localizedPath("zh", page)}"/>`,
+    `    <xhtml:link rel="alternate" hreflang="en" href="${origin}${localizedPath("en", page)}"/>`,
+    `    <xhtml:link rel="alternate" hreflang="x-default" href="${origin}${localizedPath("en", page)}"/>`,
+  ];
+
+  return (["zh", "en"] as const).map((locale) =>
+    [`  <url>`, `    <loc>${origin}${localizedPath(locale, page)}</loc>`, ...alternates, `  </url>`].join("\n"),
+  );
+}
+
 function sitemapResponse(origin: string) {
   return seoTextResponse(
     [
       '<?xml version="1.0" encoding="UTF-8"?>',
-      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-      `  <url><loc>${origin}/</loc></url>`,
-      `  <url><loc>${origin}/about</loc></url>`,
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">',
+      ...sitemapUrlEntry(origin, "/"),
+      ...sitemapUrlEntry(origin, "/about"),
       "</urlset>",
       "",
     ].join("\n"),
@@ -86,46 +166,50 @@ function sitemapResponse(origin: string) {
   );
 }
 
-// index.html ships homepage metadata; indexable non-home routes get their
-// own title/description rewritten here so crawlers that skip JavaScript
-// still see per-page metadata.
-const PAGE_META: Record<string, { title: string; description: string } | undefined> = {
-  "/about": {
-    title: "关于 Sotto · 零知识加密如何工作 | About Sotto — How Zero-Knowledge Encryption Works",
-    description:
-      "了解 Sotto 的零知识架构：内容在浏览器内以 AES-256-GCM 加密，密钥只存在于链接 # 片段，支持阅后即焚一次性领取、密码保护与自动过期。Learn how Sotto keeps pastes private: client-side AES-256 encryption, keys in the URL fragment, burn-after-reading, and automatic expiry.",
-  },
-};
+// index.html ships Chinese homepage metadata as the static fallback; every
+// indexable route gets its single-language title/description, lang attribute,
+// canonical URL, and hreflang alternates rewritten here so crawlers that skip
+// JavaScript still see complete per-page, per-language metadata.
+function injectSeoTags(response: Response, origin: string, locale: SeoLocale, page: SeoPage) {
+  const { lang, ogLocale, pages } = SEO_LOCALES[locale];
+  const meta = pages[page];
+  const canonical = `${origin}${localizedPath(locale, page)}`;
 
-function injectSeoTags(response: Response, origin: string, path: string) {
-  const rewriter = new HTMLRewriter().on("head", {
-    element(head) {
-      head.append(`<link rel="canonical" href="${origin}${path}">`, { html: true });
-      head.append(`<meta property="og:url" content="${origin}${path}">`, { html: true });
+  const setContent = (value: string) => ({
+    element(element: Element) {
+      element.setAttribute("content", value);
     },
   });
 
-  const meta = PAGE_META[path];
-  if (meta) {
-    const setContent = (value: string) => ({
-      element(element: Element) {
-        element.setAttribute("content", value);
+  const rewriter = new HTMLRewriter()
+    .on("html", {
+      element(html) {
+        html.setAttribute("lang", lang);
       },
-    });
-
-    rewriter.on("title", {
+    })
+    .on("head", {
+      element(head) {
+        head.append(`<link rel="canonical" href="${canonical}">`, { html: true });
+        head.append(`<meta property="og:url" content="${canonical}">`, { html: true });
+        head.append(`<link rel="alternate" hreflang="zh-CN" href="${origin}${localizedPath("zh", page)}">`, { html: true });
+        head.append(`<link rel="alternate" hreflang="en" href="${origin}${localizedPath("en", page)}">`, { html: true });
+        head.append(`<link rel="alternate" hreflang="x-default" href="${origin}${localizedPath("en", page)}">`, { html: true });
+      },
+    })
+    .on("title", {
       element(title) {
         title.setInnerContent(meta.title);
       },
     });
-    // HTMLRewriter has no selector lists, so each tag is registered separately.
-    for (const selector of ['meta[property="og:title"]', 'meta[name="twitter:title"]']) {
-      rewriter.on(selector, setContent(meta.title));
-    }
-    for (const selector of ['meta[name="description"]', 'meta[property="og:description"]', 'meta[name="twitter:description"]']) {
-      rewriter.on(selector, setContent(meta.description));
-    }
+
+  // HTMLRewriter has no selector lists, so each tag is registered separately.
+  for (const selector of ['meta[property="og:title"]', 'meta[name="twitter:title"]']) {
+    rewriter.on(selector, setContent(meta.title));
   }
+  for (const selector of ['meta[name="description"]', 'meta[property="og:description"]', 'meta[name="twitter:description"]']) {
+    rewriter.on(selector, setContent(meta.description));
+  }
+  rewriter.on('meta[property="og:locale"]', setContent(ogLocale));
 
   return rewriter.transform(response);
 }
@@ -439,18 +523,25 @@ export default {
       return sitemapResponse(url.origin);
     }
 
+    const canonicalPath = CANONICAL_REDIRECTS[url.pathname];
+    if (request.method === "GET" && canonicalPath) {
+      const headers = new Headers({ location: `${url.origin}${canonicalPath}` });
+      setSecurityHeaders(headers);
+      return new Response(null, { status: 301, headers });
+    }
+
     const response = withSecurityHeaders(await env.ASSETS.fetch(request));
 
     // Paste view pages are private, ephemeral content — keep them out of
     // search indexes while the homepage stays indexable.
-    if (url.pathname === "/p" || url.pathname.startsWith("/p/")) {
+    if (/^(\/zh)?\/p(\/|$)/.test(url.pathname)) {
       response.headers.set("x-robots-tag", "noindex");
       return response;
     }
 
-    const indexablePath = url.pathname === "/" ? "/" : url.pathname === "/about" || url.pathname === "/about/" ? "/about" : null;
-    if (indexablePath && (response.headers.get("content-type") ?? "").includes("text/html")) {
-      return injectSeoTags(response, url.origin, indexablePath);
+    const indexable = parseIndexablePath(url.pathname);
+    if (indexable && (response.headers.get("content-type") ?? "").includes("text/html")) {
+      return injectSeoTags(response, url.origin, indexable.locale, indexable.page);
     }
 
     return response;
